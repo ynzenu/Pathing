@@ -13,6 +13,7 @@ namespace BhModule.Community.Pathing.UI.Views {
         public TreeView TreeView { get; private set; }
 
         private TextBox _searchBox;
+        private Checkbox _checkBox;
 
         public MarkerTreeView(PathingModule module) {
             this.WithPresenter(new MarkerTreePresenter(this, module));
@@ -28,10 +29,21 @@ namespace BhModule.Community.Pathing.UI.Views {
 
             _searchBox.TextChanged += SearchBoxTextChanged;
 
+            _checkBox = new Checkbox {
+                Text   = "Filter by current map",
+                Location = new Point(0, _searchBox.Bottom + 5),
+                Size = new Point(100, 20),
+                Checked = true,
+                Parent = buildPanel,
+            };
+
+            _checkBox.CheckedChanged += CheckBoxOnCheckedChanged;
+
             this.RepoFlowPanel = new CustomFlowPanel {
                 Size                = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - 12),
-                Top                 = _searchBox.Bottom + 5,
+                Top                 = _checkBox.Bottom + 5,
                 CanScroll           = true,
+                ShowBorder          = true,
                 Parent              = buildPanel
             };
 
@@ -52,6 +64,13 @@ namespace BhModule.Community.Pathing.UI.Views {
                 var results = presenter.Search(_searchBox.Text).ToList();
 
                 presenter.SetSearchResults(results);
+            }
+        }
+
+        private void CheckBoxOnCheckedChanged(object sender, CheckChangedEvent e)
+        {
+            foreach (var node in TreeView.Children.OfType<MarkerNode>()) {
+                node.ForceShowAll = !e.Checked;
             }
         }
     }

@@ -101,6 +101,24 @@ namespace BhModule.Community.Pathing.State {
 
         private MapDetails? _currentMapDetails = null;
 
+        public MapDetails GetMapDetails(int mapId) {
+            _mapDetails.TryGetValue(mapId, out var details);
+
+            return details;
+        }
+
+        public KeyValuePair<int, MapDetails>? FindMapDetails(float x, float y) {
+
+            //TODO: What if this fails?
+            return _mapDetails.FirstOrDefault(
+                              m =>
+                                  x > m.Value.MapRectTopLeftX                        &&
+                                  x < m.Value.MapRectTopLeftX + m.Value.MapRectWidth &&
+                                  y > m.Value.MapRectTopLeftY                        &&
+                                  y < m.Value.MapRectTopLeftY + m.Value.MapRectHeight
+                             );
+        }
+
         public void EventCoordsToMapCoords(double eventCoordsX, double eventCoordsY, out double outX, out double outY) {
             if (_currentMapDetails.HasValue) {
                 outX = _currentMapDetails.Value.ContinentRectTopLeftX + (eventCoordsX * METERCONVERSION - _currentMapDetails.Value.MapRectTopLeftX) / _currentMapDetails.Value.MapRectWidth * _currentMapDetails.Value.ContinentRectWidth;

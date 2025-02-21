@@ -9,6 +9,7 @@ using BhModule.Community.Pathing.Behavior.Modifier;
 using BhModule.Community.Pathing.MarkerPackRepo;
 using BhModule.Community.Pathing.State;
 using BhModule.Community.Pathing.UI.Controls;
+using BhModule.Community.Pathing.Utility;
 using Blish_HUD;
 using Blish_HUD.Controls;
 using Blish_HUD.Settings;
@@ -131,7 +132,54 @@ namespace BhModule.Community.Pathing {
         }
 
         public PathingCategory GetAllMarkersCategories() {
-            return _sharedPackCollection.Categories;
+            return _sharedPackCollection?.Categories;
+        }
+
+        public (IEnumerable<PathingCategory> SubCategories, int Skipped) GetSubCategories(PathingCategory pathingCategory, bool forceShowAll = false)
+        {
+            // We only show subcategories with a non-empty DisplayName (explicitly setting it to "" will hide it) and
+            // was loaded by one of the packs (since those still around from unloaded packs will remain).
+            var subCategories = pathingCategory.Where(cat => cat.LoadedFromPack && cat.DisplayName != "" && !cat.IsHidden);
+
+            if (!_packState.UserConfiguration.PackEnableSmartCategoryFilter.Value || forceShowAll)
+            {
+                return (subCategories, 0);
+            }
+
+            var filteredSubCategories = new List<PathingCategory>();
+
+            PathingCategory lastCategory = null;
+
+            bool lastIsSeparator = false;
+
+            int skipped = 0;
+
+            // We go bottom to top to check if the categories are potentially relevant to categories below.
+            foreach (var subCategory in subCategories.Reverse())
+            {
+                if (subCategory.IsSeparator && ((!lastCategory?.IsSeparator ?? false) || lastIsSeparator))
+                {
+                    // If separator was relevant to this category, we include it.
+                    filteredSubCategories.Add(subCategory);
+                    lastIsSeparator = true;
+                }
+                else if (CategoryUtil.UiCategoryIsNotFiltered(subCategory, _packState))
+                {
+                    // If category was not filtered, we include it.
+                    filteredSubCategories.Add(subCategory);
+                    lastIsSeparator = false;
+                }
+                else
+                {
+                    lastIsSeparator = false;
+                    if (!subCategory.IsSeparator) skipped++;
+                    continue;
+                }
+
+                lastCategory = subCategory;
+            }
+
+            return (Enumerable.Reverse(filteredSubCategories), skipped);
         }
 
         public IEnumerable<ContextMenuStripItem> GetPackMenuItems() {

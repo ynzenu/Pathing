@@ -14,9 +14,6 @@ namespace BhModule.Community.Pathing.UI.Presenter {
 
         private readonly PathingModule _module;
 
-        private MarkerNode _primaryMarkerNode;
-
-
         public MarkerTreePresenter(MarkerTreeView view, PathingModule module) : base(view, module.PackInitiator) {
             _module = module;
         }
@@ -58,15 +55,19 @@ namespace BhModule.Community.Pathing.UI.Presenter {
 
             if (_module.PackInitiator == null) return;
 
-            _primaryMarkerNode = new MarkerNode(_module.PackInitiator.PackState, _module.PackInitiator.GetAllMarkersCategories(), false, "All Markers")
-            {
-                Parent = this.View.TreeView,
-                Width = this.View.TreeView.Width - 30
-            };
+            var root = _module.PackInitiator.GetAllMarkersCategories();
 
-            _primaryMarkerNode.Build();
+            var packs = _module.PackInitiator.GetSubCategories(root, true);
 
-            _primaryMarkerNode.Expand();
+            foreach (var pack in packs.SubCategories) {
+                var packNode = new MarkerNode(_module.PackInitiator.PackState, pack, false)
+                {
+                    Parent = this.View.TreeView,
+                    Width  = this.View.TreeView.Width - 30
+                };
+
+                packNode.Build();
+            }
         }
 
         public void ResetView() {
@@ -74,13 +75,14 @@ namespace BhModule.Community.Pathing.UI.Presenter {
         }
 
         public void SetSearchResults(IList<PathingCategory> categories) {
-            _primaryMarkerNode.ClearChildNodes();
+            
+            this.View.TreeView.ClearChildNodes();
 
             foreach (var category in categories) {
                 var categoryNode = new MarkerNode(_module.PackInitiator.PackState, category, false)
                 {
-                    Parent                = _primaryMarkerNode,
-                    Width                 = _primaryMarkerNode.Width - 14,
+                    Parent                = this.View.TreeView,
+                    Width                 = this.View.TreeView.Width - 14,
                     BackgroundOpaqueColor = Color.Yellow,
                     BackgroundOpacity     = 0.2f
                 };

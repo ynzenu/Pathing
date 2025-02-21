@@ -275,6 +275,8 @@
     <Compile Include="UI\Controls\SettingHero.cs" />
     <Compile Include="UI\Controls\SimpleContextMenuStripItem.cs" />
     <Compile Include="UI\Controls\SmallInteract.cs" />
+    <Compile Include="UI\Controls\TreeView\Tooltips\EntityDetailsTooltip.cs" />
+    <Compile Include="UI\Controls\TreeView\Tooltips\EntityTextureTooltip.cs" />
     <Compile Include="UI\Controls\TreeView\CustomFlowPanel.cs" />
     <Compile Include="UI\Controls\TreeView\MarkerNode.cs" />
     <Compile Include="UI\Controls\TreeView\LabelNode.cs" />
@@ -646,9 +648,6 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.ReaderWriter" />
-    <Reference Include="TmfLib, Version=2.2.2.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>packages\TmfLib.2.2.2\lib\netstandard2.0\TmfLib.dll</HintPath>
-    </Reference>
     <Reference Include="YamlDotNet, Version=11.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
       <HintPath>packages\YamlDotNet.11.2.1\lib\net45\YamlDotNet.dll</HintPath>
       <Private>True</Private>
@@ -673,7 +672,6 @@
     <Content Include="License-2mgfx.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="License-NanoXml.htm" />
     <None Include="LICENSE.txt" />
     <None Include="README.md" />
     <None Include="Resources\add.png" />
@@ -715,6 +713,12 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TmfLib\TmfLib.csproj">
+      <Project>{d66aacb7-a2b7-4f13-9667-b1d7f1cf8848}</Project>
+      <Name>TmfLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

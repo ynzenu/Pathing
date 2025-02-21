@@ -67,6 +67,8 @@ public class CustomFlowPanel : FlowPanel
 
     private void ChangedChild_Resized(object sender, ResizedEventArgs e) {
 
+        if (e.PreviousSize.Y == e.CurrentSize.Y) return;
+
         var otherChildrenSize = Children.Where(c => c != sender)
                                     .Sum(c => c.Height);
 

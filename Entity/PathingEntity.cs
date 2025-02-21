@@ -48,11 +48,14 @@ namespace BhModule.Community.Pathing.Entity {
 
         protected readonly IPackState _packState;
 
+        public IPointOfInterest PointOfInterest { get; private set; }
+
         protected PathingEntity(IPackState packState, IPointOfInterest pointOfInterest) {
             _packState    = packState;
 
-            this.MapId    = pointOfInterest.MapId;
-            this.Category = pointOfInterest.ParentPathingCategory ?? _packState.RootCategory;
+            this.PointOfInterest = pointOfInterest;
+            this.MapId           = pointOfInterest.MapId;
+            this.Category        = pointOfInterest.ParentPathingCategory ?? _packState.RootCategory;
         }
 
         public abstract RectangleF? RenderToMiniMap(SpriteBatch spriteBatch, Rectangle bounds, double offsetX, double offsetY, double scale, float opacity);
