@@ -270,6 +270,7 @@
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
     <Compile Include="UI\Controls\ContextMenuStripDivider.cs" />
+    <Compile Include="UI\Controls\DetailedTexture.cs" />
     <Compile Include="UI\Controls\DonateHero.cs" />
     <Compile Include="UI\Controls\HorizontalCompass.cs" />
     <Compile Include="UI\Controls\ScreenDraw.cs" />
@@ -277,6 +278,8 @@
     <Compile Include="UI\Controls\SimpleContextMenuStripItem.cs" />
     <Compile Include="UI\Controls\SmallInteract.cs" />
     <Compile Include="UI\Controls\NodeTree\PathingNode.cs" />
+    <Compile Include="UI\Controls\TabbedRegion.cs" />
+    <Compile Include="UI\Controls\TabbedRegionTab.cs" />
     <Compile Include="UI\Events\PathingCategoryEventArgs.cs" />
     <Compile Include="UI\Models\PathingTexture.cs" />
     <Compile Include="UI\Tooltips\CategoryPathTooltip.cs" />

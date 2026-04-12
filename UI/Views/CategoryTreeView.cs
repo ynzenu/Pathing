@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Threading;
 using BhModule.Community.Pathing.UI.Controls.TreeView;
 using BhModule.Community.Pathing.UI.Presenter;
 using BhModule.Community.Pathing.Utility;
+using BhModule.Community.Pathing.UI.Controls;
 using Blish_HUD.Controls;
 using Blish_HUD.Graphics.UI;
 using Microsoft.Xna.Framework;
@@ -15,6 +16,7 @@ namespace BhModule.Community.Pathing.UI.Views {
     public class CategoryTreeView : View {
         private static readonly Logger    _logger = Logger.GetLogger<CategoryTreeView>();
         private                 FlowPanel RepoFlowPanel { get; set; }
+        private                 TabbedRegion _tabbedRegion;
 
         public TreeView TreeView { get; private set; }
 
@@ -97,20 +99,28 @@ namespace BhModule.Community.Pathing.UI.Views {
                 Font           = GameService.Content.DefaultFont16,
             };
 
-            this.RepoFlowPanel = new CustomFlowPanel {
-                Size       = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 5),
-                Top        = _searchBox.Bottom + 5,
-                CanScroll  = true,
-                ShowBorder = true,
-                Parent     = buildPanel
+            this._tabbedRegion = new TabbedRegion {
+                Parent   = buildPanel,
+                Location = new Point(0, _searchBox.Bottom + 5),
+                Size     = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
             };
 
-            this._helpTextLabel.Location = new Point(15, this.RepoFlowPanel.Bottom);
-            
+            this.RepoFlowPanel = new CustomFlowPanel {
+                Size       = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
+                CanScroll  = true,
+                ShowBorder = true,
+            };
+
+            this._tabbedRegion.AddTab(new TabbedRegionTab(this.RepoFlowPanel) { Header = () => "All Categories" });
+            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Favorites" });
+            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Recent" });
+            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Near Me" });
+
+            this._helpTextLabel.Location = new Point(15, this._tabbedRegion.Bottom);
 
             this.TreeView = new TreeView(_module.PackInitiator) {
                 HeightSizingMode = SizingMode.AutoSize,
-                Size             = new Point(RepoFlowPanel.Width, RepoFlowPanel.Height),
+                Width            = RepoFlowPanel.Width,
                 Parent           = RepoFlowPanel
             };
 
