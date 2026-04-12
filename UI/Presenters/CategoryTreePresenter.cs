@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using BhModule.Community.Pathing.UI.Events;
@@ -41,6 +41,7 @@ namespace BhModule.Community.Pathing.UI.Presenter {
                 return;
 
             this.View.TreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.NearMeTreeView.SetPackInitiator(_module.PackInitiator);
 
             try
             {
@@ -73,6 +74,7 @@ namespace BhModule.Community.Pathing.UI.Presenter {
 
         private void Initialize() {
             this.View.TreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.NearMeTreeView.SetPackInitiator(_module.PackInitiator);
 
             //Handle pack events
             InitalizePackEvents();

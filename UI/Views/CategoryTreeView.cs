@@ -12,15 +12,21 @@ using Blish_HUD;
 using TmfLib.Pathable;
 using System.Linq;
 
-namespace BhModule.Community.Pathing.UI.Views {
-    public class CategoryTreeView : View {
-        private static readonly Logger    _logger = Logger.GetLogger<CategoryTreeView>();
-        private                 FlowPanel RepoFlowPanel { get; set; }
-        private                 TabbedRegion _tabbedRegion;
+namespace BhModule.Community.Pathing.UI.Views
+{
+    public class CategoryTreeView : View
+    {
+        private static readonly Logger _logger = Logger.GetLogger<CategoryTreeView>();
+        private FlowPanel RepoFlowPanel { get; set; }
+        private TabbedRegion _tabbedRegion;
+        private FlowPanel _nearMeFlowPanel;
 
         public TreeView TreeView { get; private set; }
+        public TreeView NearMeTreeView { get; private set; }
 
-        private TextBox    _searchBox;
+        private StandardButton _refreshNearMeButton;
+        private Checkbox _activeOnlyCheckbox;
+        private TextBox _searchBox;
 
         private Label _searchStatusLabel;
 
@@ -38,14 +44,17 @@ namespace BhModule.Community.Pathing.UI.Views {
 
         public PathingCategory TargetCategory { get; set; }
 
-        public CategoryTreeView(PathingModule module) {
+        public CategoryTreeView(PathingModule module)
+        {
             _module = module;
 
             this.WithPresenter(new CategoryTreePresenter(this, module));
         }
 
-        protected override void Build(Container buildPanel) {
-            this._searchBox = new TextBox {
+        protected override void Build(Container buildPanel)
+        {
+            this._searchBox = new TextBox
+            {
                 PlaceholderText = "Search markers or insert path...",
                 Parent = buildPanel,
                 Location = new Point(0, 10),
@@ -56,24 +65,24 @@ namespace BhModule.Community.Pathing.UI.Views {
 
             this._packsNotInitializedLabel = new Label
             {
-                Text           = "Please enter the game to load the marker packs.",
-                Font           = GameService.Content.DefaultFont18,
+                Text = "Please enter the game to load the marker packs.",
+                Font = GameService.Content.DefaultFont18,
                 AutoSizeHeight = true,
-                AutoSizeWidth  = true,
-                Location       = new Point(buildPanel.Width / 2 - 200, buildPanel.Height / 2 - 80),
-                Parent         = buildPanel,
-                Visible        = !PacksAreInitialized(),
+                AutoSizeWidth = true,
+                Location = new Point(buildPanel.Width / 2 - 200, buildPanel.Height / 2 - 80),
+                Parent = buildPanel,
+                Visible = !PacksAreInitialized(),
             };
 
             this._packsNotLoadedLabel = new Label
             {
-                Text           = "No marker packs have been loaded.",
-                Font           = GameService.Content.DefaultFont18,
+                Text = "No marker packs have been loaded.",
+                Font = GameService.Content.DefaultFont18,
                 AutoSizeHeight = true,
-                AutoSizeWidth  = true,
-                Location       = new Point(buildPanel.Width / 2 - 160, buildPanel.Height / 2 - 80),
-                Parent         = buildPanel,
-                Visible        = PacksAreInitialized() && !PacksAreLoaded(),
+                AutoSizeWidth = true,
+                Location = new Point(buildPanel.Width / 2 - 160, buildPanel.Height / 2 - 80),
+                Parent = buildPanel,
+                Visible = PacksAreInitialized() && !PacksAreLoaded(),
             };
 
             this._searchStatusLabel = new Label
@@ -82,107 +91,189 @@ namespace BhModule.Community.Pathing.UI.Views {
                 Size = new Point(100, 20),
                 Font = GameService.Content.DefaultFont18,
                 AutoSizeHeight = true,
-                AutoSizeWidth  = true,
-                Location       = new Point(buildPanel.Width / 2 - 120, buildPanel.Height / 2 - 80),
-                Parent         = buildPanel,
-                Visible        = false,
+                AutoSizeWidth = true,
+                Location = new Point(buildPanel.Width / 2 - 120, buildPanel.Height / 2 - 80),
+                Parent = buildPanel,
+                Visible = false,
             };
 
             this._helpTextLabel = new Label()
             {
-                Parent         = buildPanel,
-                Text           = "Right click on categories for options.",
+                Parent = buildPanel,
+                Text = "Right click on categories for options.",
                 AutoSizeHeight = true,
-                AutoSizeWidth  = true,
-                StrokeText     = true,
-                TextColor      = Color.LightYellow,
-                Font           = GameService.Content.DefaultFont16,
+                AutoSizeWidth = true,
+                StrokeText = true,
+                TextColor = Color.LightYellow,
+                Font = GameService.Content.DefaultFont16,
             };
 
-            this._tabbedRegion = new TabbedRegion {
-                Parent   = buildPanel,
+            this._tabbedRegion = new TabbedRegion
+            {
+                Parent = buildPanel,
                 Location = new Point(0, _searchBox.Bottom + 5),
-                Size     = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
+                Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
             };
 
-            this.RepoFlowPanel = new CustomFlowPanel {
-                Size       = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
-                CanScroll  = true,
+            this.RepoFlowPanel = new CustomFlowPanel
+            {
+                Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
+                CanScroll = true,
                 ShowBorder = true,
             };
 
             this._tabbedRegion.AddTab(new TabbedRegionTab(this.RepoFlowPanel) { Header = () => "All Categories" });
-            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Favorites" });
-            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Recent" });
-            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel())       { Header = () => "Near Me" });
+            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel()) { Header = () => "Favorites" });
+            this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel()) { Header = () => "Recent" });
+
+            this._nearMeFlowPanel = new CustomFlowPanel
+            {
+                Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
+                CanScroll = true,
+                ShowBorder = true,
+            };
+
+            // Toolbar: Active Only checkbox + Refresh button (both right-aligned)
+            var nearMeToolbar = new Panel
+            {
+                Parent = this._nearMeFlowPanel,
+                Width = this._nearMeFlowPanel.Width,
+                Height = 35,
+            };
+
+            this._refreshNearMeButton = new StandardButton
+            {
+                Parent = nearMeToolbar,
+                Text = "Refresh",
+                Width = 100,
+                Location = new Point(nearMeToolbar.Width - 130, 3),
+            };
+
+            this._activeOnlyCheckbox = new Checkbox
+            {
+                Parent = nearMeToolbar,
+                Text = "Active only",
+                Checked = true,
+                Location = new Point(this._refreshNearMeButton.Left - 115, 7),
+                Width = 110,
+            };
+
+            this._refreshNearMeButton.Click += (_, _) =>
+            {
+                RefreshNearMe();
+            };
+
+            this._activeOnlyCheckbox.CheckedChanged += (_, _) =>
+            {
+                RefreshNearMe();
+            };
+
+            this.NearMeTreeView = new TreeView(_module.PackInitiator)
+            {
+                HeightSizingMode = SizingMode.AutoSize,
+                Width = _nearMeFlowPanel.Width,
+                Parent = _nearMeFlowPanel
+            };
+
+            var nearMeTab = new TabbedRegionTab(this._nearMeFlowPanel) { Header = () => "Near Me" };
+            this._tabbedRegion.AddTab(nearMeTab);
+
+            this._tabbedRegion.OnTabSwitched = () =>
+            {
+                if (this._tabbedRegion.ActiveTab == nearMeTab)
+                {
+                    RefreshNearMe();
+                }
+            };
 
             this._helpTextLabel.Location = new Point(15, this._tabbedRegion.Bottom);
 
-            this.TreeView = new TreeView(_module.PackInitiator) {
+            this.TreeView = new TreeView(_module.PackInitiator)
+            {
                 HeightSizingMode = SizingMode.AutoSize,
-                Width            = RepoFlowPanel.Width,
-                Parent           = RepoFlowPanel
+                Width = RepoFlowPanel.Width,
+                Parent = RepoFlowPanel
             };
 
             this._loadingSpinner = new LoadingSpinner
             {
-                Parent   = buildPanel,
+                Parent = buildPanel,
                 Location = new Point(buildPanel.Width / 2 - 75, buildPanel.Height / 2 - 75),
-                Size     = new Point(55, 55),
-                Visible  = false // Hide by default
+                Size = new Point(55, 55),
+                Visible = false // Hide by default
             };
 
-            this.TreeView.NodeLoadingStarted += (_, _) => {
+            this.TreeView.NodeLoadingStarted += (_, _) =>
+            {
                 _cancellationTokenSource?.Cancel();
 
                 SetLoading(true);
                 ResetSearch();
             };
 
-            this.TreeView.NodesLoadedFinished += (_, _) => {
+            this.TreeView.NodesLoadedFinished += (_, _) =>
+            {
                 SetLoading(false);
             };
         }
 
-        public bool ValidateMarkerPacksState() {
-            var packsAreInitialized = PacksAreInitialized(); 
-            var packsAreLoaded      = PacksAreLoaded();
+        private void RefreshNearMe()
+        {
+            if (_module.PackInitiator?.PackState == null) return;
 
-            if (_packsNotInitializedLabel != null) 
+            this.NearMeTreeView.SetNearMeResults(
+                _module.PackInitiator.PackState,
+                200,
+                _activeOnlyCheckbox?.Checked ?? false
+            );
+        }
+
+        public bool ValidateMarkerPacksState()
+        {
+            var packsAreInitialized = PacksAreInitialized();
+            var packsAreLoaded = PacksAreLoaded();
+
+            if (_packsNotInitializedLabel != null)
                 _packsNotInitializedLabel.Visible = !packsAreInitialized;
 
-            if(_packsNotLoadedLabel != null)
+            if (_packsNotLoadedLabel != null)
                 _packsNotLoadedLabel.Visible = packsAreInitialized && !packsAreLoaded;
 
             return packsAreLoaded;
         }
 
-        public void SetLoading(bool loading) {
-            if (loading) {
-                if (_packsNotInitializedLabel != null) 
+        public void SetLoading(bool loading)
+        {
+            if (loading)
+            {
+                if (_packsNotInitializedLabel != null)
                     _packsNotInitializedLabel.Visible = false;
 
-                if(_packsNotLoadedLabel != null)
+                if (_packsNotLoadedLabel != null)
                     _packsNotLoadedLabel.Visible = false;
             }
-            
-            this._loadingSpinner.Visible     = loading;
+
+            this._loadingSpinner.Visible = loading;
         }
 
-        private void SearchBoxTextChanged(object sender, EventArgs e) {
-            if (Presenter is CategoryTreePresenter presenter) {
+        private void SearchBoxTextChanged(object sender, EventArgs e)
+        {
+            if (Presenter is CategoryTreePresenter presenter)
+            {
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 TreeView.RemoveNodeHighlights();
                 _searchStatusLabel.Visible = false;
 
-                if (_searchBox.Text.StartsWith(".")) {
+                if (_searchBox.Text.StartsWith("."))
+                {
                     TreeView.NavigateToPath(_searchBox.Text);
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(_searchBox.Text)) {
+                if (string.IsNullOrWhiteSpace(_searchBox.Text))
+                {
                     presenter.DoUpdateView();
                     return;
                 }
@@ -191,13 +282,15 @@ namespace BhModule.Community.Pathing.UI.Views {
                 TreeView.ClearChildNodes();
                 SetLoading(true);
 
-                Task.Run(async () => {
+                Task.Run(async () =>
+                {
                     await ExecuteSearch(_searchBox.Text, _cancellationTokenSource.Token);
                 }, _cancellationTokenSource.Token);
             }
         }
 
-        public void NavigateToCategory(PathingCategory category) {
+        public void NavigateToCategory(PathingCategory category)
+        {
             ResetSearch();
 
             this.TreeView?.LoadNodes();
@@ -206,11 +299,13 @@ namespace BhModule.Community.Pathing.UI.Views {
 
         private static readonly SemaphoreSlim _searchSemaphore = new SemaphoreSlim(1, 1); // Limit to 1 concurrent search
 
-        private async Task ExecuteSearch(string input, CancellationToken cancellationToken, bool forceShowAll = false) {
+        private async Task ExecuteSearch(string input, CancellationToken cancellationToken, bool forceShowAll = false)
+        {
             await _searchSemaphore.WaitAsync(cancellationToken);
 
-            try {
-                
+            try
+            {
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await Task.Delay(200, cancellationToken);
@@ -227,7 +322,8 @@ namespace BhModule.Community.Pathing.UI.Views {
 
                 if (showAllSkippedNode != null)
                 {
-                    showAllSkippedNode.LeftMouseButtonReleased += async (_, _) => {
+                    showAllSkippedNode.LeftMouseButtonReleased += async (_, _) =>
+                    {
                         cancellationToken.ThrowIfCancellationRequested();
 
                         await ExecuteSearch(input, cancellationToken, true);
@@ -251,8 +347,9 @@ namespace BhModule.Community.Pathing.UI.Views {
             }
         }
 
-        public void ResetSearch() {
-            _searchBox.Text            = string.Empty;
+        public void ResetSearch()
+        {
+            _searchBox.Text = string.Empty;
         }
 
         private bool PacksAreInitialized()

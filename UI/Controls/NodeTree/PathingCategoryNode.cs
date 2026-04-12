@@ -50,6 +50,12 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
 
         protected Label PackNameControl;
         public    bool  IsSearchResult { get; init; }
+        public    bool  ShowDistance   { get; set; }
+
+        public Predicate<PathingCategory> CategoryFilter     { get; set; }
+        public Dictionary<PathingCategory, float> DistanceLookup { get; set; }
+
+        private Label _distanceLabel;
 
         public PathingCategoryNode(IPackState packState, PathingCategory pathingCategory, bool showForceAll) : base(pathingCategory.DisplayName) {
             _packState           = packState;
@@ -107,6 +113,10 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
             //Details
             BuildAchievementTexture();
 
+            if (ShowDistance) {
+                BuildDistanceLabel();
+            }
+
             //Pack name
             if (IsSearchResult) {
                 LabelControl.MouseEntered += NameControlOnMouseEntered;
@@ -141,6 +151,25 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
             };
 
             PackNameControl.MouseEntered += NameControlOnMouseEntered;
+        }
+
+        private void BuildDistanceLabel() {
+            _distanceLabel?.Dispose();
+
+            string text = "---";
+            if (DistanceLookup != null && DistanceLookup.TryGetValue(this.PathingCategory, out float distance)) {
+                text = $"{(int)distance}m";
+            }
+
+            _distanceLabel = new Label {
+                Parent        = _propertiesPanel,
+                Text          = text,
+                Height        = this.PanelHeight,
+                AutoSizeWidth = true,
+                Font          = GameService.Content.DefaultFont16,
+                TextColor     = StandardColors.Yellow,
+                StrokeText    = true
+            };
         }
 
         private Tooltip _categoryPathTooltip;
@@ -384,19 +413,27 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
 
             (IEnumerable<PathingCategory> subCategories, int skipped) = this.PathingCategory.FilterCategories(_packState, forceShowAll, this.TreeView?.EntityLookup);
 
+            if (this.CategoryFilter != null) {
+                subCategories = subCategories.Where(c => this.CategoryFilter(c)).ToList();
+            }
+
             foreach (var subCategory in subCategories) {
                 if (subCategory == null) continue;
 
                 //Parent has changed while building
                 if (this.Parent == null) break;
 
-                _ = new PathingCategoryNode(_packState, subCategory, forceShowAll)
+                var newNode = new PathingCategoryNode(_packState, subCategory, forceShowAll)
                 {
-                    Width          = this.Parent.Width - 14,
-                    Parent         = this,
-                    Visible        = this.Expanded,
-                    IsSearchResult = this.IsSearchResult
+                    IsSearchResult   = this.IsSearchResult,
+                    CategoryFilter   = this.CategoryFilter,
+                    DistanceLookup   = this.DistanceLookup,
+                    ShowDistance     = this.ShowDistance
                 };
+
+                newNode.Width   = this.Parent.Width - 14;
+                newNode.Visible = this.Expanded;
+                newNode.Parent  = this;
             }
 
             if (skipped > 0 && this.Parent != null && _packState.UserConfiguration.PackShowWhenCategoriesAreFiltered.Value)

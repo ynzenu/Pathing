@@ -210,6 +210,79 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeView
             }
         }
 
+        public void SetNearMeResults(IPackState packState, int maxResults, bool activeOnly = false) {
+            NodeLoadingStarted?.Invoke(this, EventArgs.Empty);
+
+            ClearChildNodes();
+            AllBaseNodes.Clear();
+
+            this.EntityLookup = packState.Entities.ToArray().ToLookup(e => e.Category);
+
+            if (PackInitiator == null) {
+                this.NodesLoadedFinished?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            var rootCategory = PackInitiator.GetAllMarkersCategories();
+            if (rootCategory == null) {
+                this.NodesLoadedFinished?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            var mapId = GameService.Gw2Mumble.CurrentMap.Id;
+
+            // 1. Compute min distance per category using EntityLookup (O(1) per category)
+            var categoryDistances = new Dictionary<PathingCategory, float>();
+            var allCategories = CategoryUtil.FlattenCategories(rootCategory);
+
+            foreach (var c in allCategories) {
+                if (c.IsSeparator || c.IsHidden || !c.LoadedFromPack) continue;
+
+                // Filter to active categories only
+                if (activeOnly && packState.CategoryStates.GetNamespaceInactive(c.Namespace)) continue;
+
+                float minDist = float.MaxValue;
+                foreach (var e in EntityLookup[c]) {
+                    if (e.MapId == mapId && e.DistanceToPlayer > 0 && e.DistanceToPlayer < minDist) {
+                        minDist = e.DistanceToPlayer;
+                    }
+                }
+
+                if (minDist < float.MaxValue) {
+                    categoryDistances[c] = minDist;
+                }
+            }
+
+            // 2. Take the top N nearest categories, sorted by distance
+            var nearMeLeaves = categoryDistances
+                              .OrderBy(x => x.Value)
+                              .Take(maxResults)
+                              .ToList();
+
+            if (nearMeLeaves.Count == 0) {
+                this.NodesLoadedFinished?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            // 3. Build a flat list (like search results)
+            var distanceLookup = nearMeLeaves.ToDictionary(x => x.Key, x => x.Value);
+
+            foreach (var kvp in nearMeLeaves) {
+                var node = new PathingCategoryNode(packState, kvp.Key, false) {
+                    IsSearchResult = true,
+                    ShowDistance    = true,
+                    DistanceLookup = distanceLookup
+                };
+
+                node.Width  = this.Width - 30;
+                node.Parent = this;
+
+                node.Active = !packState.CategoryStates.GetNamespaceInactive(kvp.Key.Namespace);
+            }
+
+            this.NodesLoadedFinished?.Invoke(this, EventArgs.Empty);
+        }
+
         public LabelNode SetSearchResults(IList<PathingCategory> categories, IPackState packState, int skipped = 0)
         {
             ClearChildNodes();

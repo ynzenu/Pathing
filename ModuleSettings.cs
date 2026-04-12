@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using Blish_HUD.Input;
 using Blish_HUD.Settings;
@@ -24,6 +24,7 @@ namespace BhModule.Community.Pathing {
         Always,
         Never
     }
+
 
     public class ModuleSettings {
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BhModule.Community.Pathing.Content;
@@ -64,6 +64,57 @@ namespace BhModule.Community.Pathing.Entity {
             }
 
             this.FadeIn();
+        }
+
+        public override void Update(GameTime gameTime) {
+            if (_sectionPoints != null) {
+                var playerPos = GameService.Gw2Mumble.PlayerCharacter.Position;
+                float minDistSq = float.MaxValue;
+
+                for (int s = 0; s < _sectionPoints.Length; s++) {
+                    ref Vector3[] section = ref _sectionPoints[s];
+
+                    if (section.Length == 0) continue;
+
+                    // Check distance to first point if section has only one point
+                    if (section.Length == 1) {
+                        float dSq = Vector3.DistanceSquared(playerPos, section[0]);
+                        if (dSq < minDistSq) minDistSq = dSq;
+                        continue;
+                    }
+
+                    // Check distance to each line segment
+                    for (int i = 0; i < section.Length - 1; i++) {
+                        float dSq = DistanceSquaredToSegment(playerPos, section[i], section[i + 1]);
+                        if (dSq < minDistSq) minDistSq = dSq;
+                    }
+                }
+
+                this.DistanceToPlayer = minDistSq < float.MaxValue ? (float)Math.Sqrt(minDistSq) : -1;
+            }
+
+            base.Update(gameTime);
+        }
+
+        /// <summary>
+        /// Returns the squared distance from point <paramref name="p"/> to the line segment defined by <paramref name="a"/> and <paramref name="b"/>.
+        /// </summary>
+        private static float DistanceSquaredToSegment(Vector3 p, Vector3 a, Vector3 b) {
+            Vector3 ab = b - a;
+            float abLenSq = ab.LengthSquared();
+
+            if (abLenSq < float.Epsilon) {
+                // Degenerate segment (a == b)
+                return Vector3.DistanceSquared(p, a);
+            }
+
+            // Project p onto the line defined by a->b, clamped to [0,1]
+            float t = MathHelper.Clamp(Vector3.Dot(p - a, ab) / abLenSq, 0f, 1f);
+
+            // Closest point on the segment
+            Vector3 closest = a + ab * t;
+
+            return Vector3.DistanceSquared(p, closest);
         }
 
     }

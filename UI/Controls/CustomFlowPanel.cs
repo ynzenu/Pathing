@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using BhModule.Community.Pathing.UI.Extensions;
 using Blish_HUD.Controls;
@@ -32,9 +32,11 @@ public class CustomFlowPanel : FlowPanel
 
     public void SaveScrollDistance(int height)
     {
+        if (this.Scrollbar == null) return;
+
         var scrollbarDistance = this.Scrollbar.ScrollDistance;
 
-        if (this.Scrollbar != null && !float.IsNaN(scrollbarDistance)) {
+        if (!float.IsNaN(scrollbarDistance)) {
             
             _targetScrollDistance = scrollbarDistance * (float)(height - this.Scrollbar.Height);
         }
