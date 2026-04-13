@@ -31,26 +31,27 @@ namespace BhModule.Community.Pathing.UI.Presenter {
 
         protected override void UpdateView()
         {
-            if (_updatingView || this.View.TreeView == null) return;
+            if (_updatingView || this.View.ExplorerTreeView == null) return;
 
-            this.View.TreeView.ClearChildNodes();
+            this.View.ExplorerTreeView.ClearChildNodes();
 
             if (_module.PackInitiator == null || _module.PackInitiator.IsLoading) return;
 
             if(!this.View.ValidateMarkerPacksState())
                 return;
 
-            this.View.TreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.ExplorerTreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.SearchTreeView.SetPackInitiator(_module.PackInitiator);
             this.View.NearMeTreeView.SetPackInitiator(_module.PackInitiator);
 
             try
             {
                 _updatingView = true;
-                this.View.TreeView.LoadNodes();
+                this.View.ExplorerTreeView.LoadNodes();
 
                 if (this.View.TargetCategory != null)
                 {
-                    this.View.TreeView.NavigateToPath(this.View.TargetCategory.GetPath());
+                    this.View.ExplorerTreeView.NavigateToPath(this.View.TargetCategory.GetPath());
                     this.View.TargetCategory = null;
                 }
             }
@@ -73,7 +74,8 @@ namespace BhModule.Community.Pathing.UI.Presenter {
         }
 
         private void Initialize() {
-            this.View.TreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.ExplorerTreeView.SetPackInitiator(_module.PackInitiator);
+            this.View.SearchTreeView.SetPackInitiator(_module.PackInitiator);
             this.View.NearMeTreeView.SetPackInitiator(_module.PackInitiator);
 
             //Handle pack events
@@ -98,16 +100,17 @@ namespace BhModule.Community.Pathing.UI.Presenter {
         }
 
         private void CategoryStatesOnCategoryStatesOptimized(object sender, EventArgs e) {
-            this.View.TreeView?.UpdateSearchResultsCheckState(_module.PackInitiator.PackState);
+            this.View.ExplorerTreeView?.UpdateResultsCheckState(_module.PackInitiator.PackState);
+            this.View.SearchTreeView?.UpdateResultsCheckState(_module.PackInitiator.PackState);
         }
 
         private void CategoryStatesOnCategoryInactiveChanged(object sender, PathingCategoryEventArgs e) {
-            this.View.TreeView?.UpdateCheckedState(e.Category, e.Active);
+            this.View.ExplorerTreeView?.UpdateCheckedState(e.Category, e.Active);
         }
 
         private void PackInitiatorOnLoadMapFromEachPackStarted(object sender, EventArgs e) {
             this.View.SetLoading(true);
-            this.View.TreeView.ClearChildNodes();
+            this.View.ExplorerTreeView.ClearChildNodes();
         }
 
         private void PackInitiatorOnLoadMapFromEachPackFinished(object sender, EventArgs e) {

@@ -317,10 +317,7 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
             };
 
             stripItem.Click += (_, _) => {
-                var treeView = this.TreeView;
-
-                treeView.LoadNodes();
-                treeView.NavigateToPath(this.PathingCategory.GetPath());
+                this.TreeView?.NavigationContext?.NavigateToCategory(this.PathingCategory);
             };
         }
 

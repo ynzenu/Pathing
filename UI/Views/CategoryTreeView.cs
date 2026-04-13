@@ -20,15 +20,17 @@ namespace BhModule.Community.Pathing.UI.Views
         private FlowPanel RepoFlowPanel { get; set; }
         private TabbedRegion _tabbedRegion;
         private FlowPanel _nearMeFlowPanel;
+        private FlowPanel _searchFlowPanel;
 
-        public TreeView TreeView { get; private set; }
-        public TreeView NearMeTreeView { get; private set; }
+        public CategoryExplorerTreeView ExplorerTreeView { get; private set; }
+        public SearchResultsTreeView SearchTreeView { get; private set; }
+        public DistanceTreeView NearMeTreeView { get; private set; }
 
         private StandardButton _refreshNearMeButton;
         private Checkbox _activeOnlyCheckbox;
         private TextBox _searchBox;
 
-        private Label _searchStatusLabel;
+        private Label _searchEmptyStateLabel;
 
         private Label _packsNotInitializedLabel;
 
@@ -41,6 +43,10 @@ namespace BhModule.Community.Pathing.UI.Views
         private readonly PathingModule _module;
 
         private CancellationTokenSource _cancellationTokenSource;
+
+        private TabbedRegionTab _allCategoriesTab;
+        private TabbedRegionTab _searchResultsTab;
+        private TabbedRegionTab _previousTab;
 
         public PathingCategory TargetCategory { get; set; }
 
@@ -85,18 +91,6 @@ namespace BhModule.Community.Pathing.UI.Views
                 Visible = PacksAreInitialized() && !PacksAreLoaded(),
             };
 
-            this._searchStatusLabel = new Label
-            {
-                Text = "No categories found...",
-                Size = new Point(100, 20),
-                Font = GameService.Content.DefaultFont18,
-                AutoSizeHeight = true,
-                AutoSizeWidth = true,
-                Location = new Point(buildPanel.Width / 2 - 120, buildPanel.Height / 2 - 80),
-                Parent = buildPanel,
-                Visible = false,
-            };
-
             this._helpTextLabel = new Label()
             {
                 Parent = buildPanel,
@@ -115,6 +109,7 @@ namespace BhModule.Community.Pathing.UI.Views
                 Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
             };
 
+            // --- All Categories Tab ---
             this.RepoFlowPanel = new CustomFlowPanel
             {
                 Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
@@ -122,10 +117,14 @@ namespace BhModule.Community.Pathing.UI.Views
                 ShowBorder = true,
             };
 
-            this._tabbedRegion.AddTab(new TabbedRegionTab(this.RepoFlowPanel) { Header = () => "All Categories" });
+            _allCategoriesTab = new TabbedRegionTab(this.RepoFlowPanel) { Header = () => "Explorer" };
+            this._tabbedRegion.AddTab(_allCategoriesTab);
+
+            // --- Favorites & Recent Tabs (placeholder) ---
             this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel()) { Header = () => "Favorites" });
             this._tabbedRegion.AddTab(new TabbedRegionTab(new Panel()) { Header = () => "Recent" });
 
+            // --- Near Me Tab ---
             this._nearMeFlowPanel = new CustomFlowPanel
             {
                 Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
@@ -168,7 +167,7 @@ namespace BhModule.Community.Pathing.UI.Views
                 RefreshNearMe();
             };
 
-            this.NearMeTreeView = new TreeView(_module.PackInitiator)
+            this.NearMeTreeView = new DistanceTreeView(_module.PackInitiator)
             {
                 HeightSizingMode = SizingMode.AutoSize,
                 Width = _nearMeFlowPanel.Width,
@@ -177,6 +176,35 @@ namespace BhModule.Community.Pathing.UI.Views
 
             var nearMeTab = new TabbedRegionTab(this._nearMeFlowPanel) { Header = () => "Near Me" };
             this._tabbedRegion.AddTab(nearMeTab);
+
+            // --- Search Results Tab ---
+            this._searchFlowPanel = new CustomFlowPanel
+            {
+                Size = new Point(buildPanel.ContentRegion.Width, buildPanel.ContentRegion.Height - _searchBox.Bottom - this._helpTextLabel.Height - 10),
+                CanScroll = true,
+                ShowBorder = true,
+            };
+
+            this._searchEmptyStateLabel = new Label
+            {
+                Parent = _searchFlowPanel,
+                Text = "Use the search bar to find categories.",
+                Font = GameService.Content.DefaultFont18,
+                AutoSizeHeight = true,
+                AutoSizeWidth = true,
+                TextColor = Color.LightGray,
+                Visible = true,
+            };
+
+            this.SearchTreeView = new SearchResultsTreeView(_module.PackInitiator)
+            {
+                HeightSizingMode = SizingMode.AutoSize,
+                Width = _searchFlowPanel.Width,
+                Parent = _searchFlowPanel
+            };
+
+            _searchResultsTab = new TabbedRegionTab(this._searchFlowPanel) { Header = () => "Search Results" };
+            this._tabbedRegion.AddTab(_searchResultsTab);
 
             this._tabbedRegion.OnTabSwitched = () =>
             {
@@ -188,12 +216,19 @@ namespace BhModule.Community.Pathing.UI.Views
 
             this._helpTextLabel.Location = new Point(15, this._tabbedRegion.Bottom);
 
-            this.TreeView = new TreeView(_module.PackInitiator)
+            // --- Explorer TreeView (All Categories) ---
+            this.ExplorerTreeView = new CategoryExplorerTreeView(_module.PackInitiator)
             {
                 HeightSizingMode = SizingMode.AutoSize,
                 Width = RepoFlowPanel.Width,
                 Parent = RepoFlowPanel
             };
+
+            // --- Wire NavigationContext ---
+            var navigationContext = new TreeViewNavigationContext(NavigateToCategory);
+            this.ExplorerTreeView.NavigationContext = navigationContext;
+            this.SearchTreeView.NavigationContext = navigationContext;
+            this.NearMeTreeView.NavigationContext = navigationContext;
 
             this._loadingSpinner = new LoadingSpinner
             {
@@ -203,18 +238,36 @@ namespace BhModule.Community.Pathing.UI.Views
                 Visible = false // Hide by default
             };
 
-            this.TreeView.NodeLoadingStarted += (_, _) =>
+            this.ExplorerTreeView.NodeLoadingStarted += (_, _) =>
             {
                 _cancellationTokenSource?.Cancel();
 
                 SetLoading(true);
-                ResetSearch();
             };
 
-            this.TreeView.NodesLoadedFinished += (_, _) =>
+            this.ExplorerTreeView.NodesLoadedFinished += (_, _) =>
             {
                 SetLoading(false);
             };
+
+            // Center the empty state label after layout is established
+            CenterSearchEmptyStateLabel();
+        }
+
+        private void CenterSearchEmptyStateLabel()
+        {
+            if (_searchEmptyStateLabel == null || _searchFlowPanel == null) return;
+
+            _searchEmptyStateLabel.Location = new Point(
+                _searchFlowPanel.Width / 2 - 150,
+                _searchFlowPanel.Height / 2 - 40
+            );
+        }
+
+        private void SwitchToTab(TabbedRegionTab tab)
+        {
+            if (tab != null)
+                _tabbedRegion.ActiveTab = tab;
         }
 
         private void RefreshNearMe()
@@ -263,23 +316,37 @@ namespace BhModule.Community.Pathing.UI.Views
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                TreeView.RemoveNodeHighlights();
-                _searchStatusLabel.Visible = false;
+                ExplorerTreeView.RemoveNodeHighlights();
 
                 if (_searchBox.Text.StartsWith("."))
                 {
-                    TreeView.NavigateToPath(_searchBox.Text);
+                    // Path navigation — switch to All Categories tab
+                    SwitchToTab(_allCategoriesTab);
+                    ExplorerTreeView.NavigateToPath(_searchBox.Text);
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(_searchBox.Text))
                 {
+                    // Search cleared — clear results and switch back to previous tab
+                    SearchTreeView.ClearChildNodes();
+                    _searchEmptyStateLabel.Text = "Use the search bar to find categories.";
+                    _searchEmptyStateLabel.Visible = true;
+                    CenterSearchEmptyStateLabel();
+
+                    SwitchToTab(_previousTab ?? _allCategoriesTab);
+
                     presenter.DoUpdateView();
                     return;
                 }
 
+                // Active search — switch to Search Results tab
+                if (_tabbedRegion.ActiveTab != _searchResultsTab)
+                    _previousTab = _tabbedRegion.ActiveTab;
 
-                TreeView.ClearChildNodes();
+                _searchEmptyStateLabel.Visible = false;
+                SwitchToTab(_searchResultsTab);
+                SearchTreeView.ClearChildNodes();
                 SetLoading(true);
 
                 Task.Run(async () =>
@@ -291,10 +358,9 @@ namespace BhModule.Community.Pathing.UI.Views
 
         public void NavigateToCategory(PathingCategory category)
         {
-            ResetSearch();
-
-            this.TreeView?.LoadNodes();
-            this.TreeView?.NavigateToPath(category.GetPath());
+            SwitchToTab(_allCategoriesTab);
+            this.ExplorerTreeView?.LoadNodes();
+            this.ExplorerTreeView?.NavigateToPath(category.GetPath());
         }
 
         private static readonly SemaphoreSlim _searchSemaphore = new SemaphoreSlim(1, 1); // Limit to 1 concurrent search
@@ -312,11 +378,11 @@ namespace BhModule.Community.Pathing.UI.Views
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var searchResult = await TreeView.SearchAsync(input, cancellationToken, forceShowAll);
+                var searchResult = await ExplorerTreeView.SearchAsync(input, cancellationToken, forceShowAll);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var showAllSkippedNode = TreeView.SetSearchResults(searchResult.categories, _module.PackInitiator.PackState, searchResult.skipped);
+                var showAllSkippedNode = SearchTreeView.SetSearchResults(searchResult.categories, _module.PackInitiator.PackState, searchResult.skipped);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -330,7 +396,19 @@ namespace BhModule.Community.Pathing.UI.Views
                     };
                 }
 
-                _searchStatusLabel.Visible = searchResult.categories.Count <= 0;
+                var count = searchResult.categories.Count;
+
+                if (count <= 0)
+                {
+                    _searchEmptyStateLabel.Text = "No categories found...";
+                    _searchEmptyStateLabel.Visible = true;
+                    CenterSearchEmptyStateLabel();
+                }
+                else
+                {
+                    _searchEmptyStateLabel.Visible = false;
+                }
+
                 SetLoading(false);
             }
             catch (OperationCanceledException _)

@@ -17,7 +17,7 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
     {
         public bool DevMode = false;
 
-        public TreeView.TreeView TreeView { get; protected set; }
+        public TreeView.TreeViewBase TreeView { get; protected set; }
 
         private AsyncTexture2D _textureArrow = AsyncTexture2D.FromAssetId(155909);
 
@@ -66,7 +66,7 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
 
             switch (this.Parent)
             {
-                case TreeView.TreeView treeView:
+                case TreeView.TreeViewBase treeView:
                     this.TreeView = treeView;
                     this.Visible  = true;
                     break;
@@ -223,7 +223,7 @@ namespace BhModule.Community.Pathing.UI.Controls.TreeNodes
                 parentContainer.RecalculateLayout();
             }
 
-            if (this.Parent is TreeView.TreeView list)
+            if (this.Parent is TreeView.TreeViewBase list)
             {
                 list.RecalculateLayout();
             }

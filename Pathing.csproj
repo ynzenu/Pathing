@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -288,7 +288,11 @@
     <Compile Include="UI\Controls\NodeTree\PathingCategoryNode.cs" />
     <Compile Include="UI\Controls\NodeTree\LabelNode.cs" />
     <Compile Include="UI\Controls\NodeTree\TreeNodeBase.cs" />
-    <Compile Include="UI\Controls\NodeTree\TreeView.cs" />
+    <Compile Include="UI\Controls\NodeTree\TreeViewBase.cs" />
+    <Compile Include="UI\Controls\NodeTree\TreeViewNavigationContext.cs" />
+    <Compile Include="UI\Controls\NodeTree\CategoryExplorerTreeView.cs" />
+    <Compile Include="UI\Controls\NodeTree\SearchResultsTreeView.cs" />
+    <Compile Include="UI\Controls\NodeTree\DistanceTreeView.cs" />
     <Compile Include="UI\Extensions\PanelExtensions.cs" />
     <Compile Include="UI\Presenters\AdvancedCategoryPresenter.cs" />
     <Compile Include="UI\Presenters\CategoryTreePresenter.cs" />
